@@ -6,10 +6,12 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"strconv"
+	"time"
 
-	"github.com/gofrs/flock"
-
+	"github.com/hashicorp/packer/common/filelock"
+	"github.com/hashicorp/packer/common/retry"
 	"github.com/hashicorp/packer/packer"
 )
 
@@ -24,9 +26,10 @@ type Listener struct {
 	// Listener can be closed but Port will be file locked by packer until
 	// Close is called.
 	net.Listener
-	Port    int
-	Address string
-	lock    *flock.Flock
+	Port        int
+	Address     string
+	lock        *filelock.Flock
+	cleanupFunc func() error
 }
 
 func (l *Listener) Close() error {
@@ -34,13 +37,24 @@ func (l *Listener) Close() error {
 	if err != nil {
 		log.Printf("cannot unlock lockfile %#v: %v", l, err)
 	}
-	return l.Listener.Close()
+	err = l.Listener.Close()
+	if err != nil {
+		return err
+	}
+
+	if l.cleanupFunc != nil {
+		err := l.cleanupFunc()
+		if err != nil {
+			log.Printf("cannot cleanup: %#v", err)
+		}
+	}
+	return nil
 }
 
 // ListenRangeConfig contains options for listening to a free address [Min,Max)
 // range. ListenRangeConfig wraps a net.ListenConfig.
 type ListenRangeConfig struct {
-	// tcp", "udp"
+	// like "tcp" or "udp". defaults to "tcp".
 	Network  string
 	Addr     string
 	Min, Max int
@@ -51,49 +65,77 @@ type ListenRangeConfig struct {
 // until ctx is cancelled.
 // Listen uses net.ListenConfig.Listen internally.
 func (lc ListenRangeConfig) Listen(ctx context.Context) (*Listener, error) {
+	if lc.Network == "" {
+		lc.Network = "tcp"
+	}
 	portRange := lc.Max - lc.Min
-	for {
-		if err := ctx.Err(); err != nil {
-			return nil, err
-		}
 
+	var listener *Listener
+
+	err := retry.Config{
+		RetryDelay: func() time.Duration { return 1 * time.Millisecond },
+	}.Run(ctx, func(context.Context) error {
 		port := lc.Min
 		if portRange > 0 {
 			port += rand.Intn(portRange)
 		}
 
-		log.Printf("Trying port: %d", port)
-
 		lockFilePath, err := packer.CachePath("port", strconv.Itoa(port))
 		if err != nil {
-			return nil, err
+			return err
 		}
 
-		lock := flock.New(lockFilePath)
+		lock := filelock.New(lockFilePath)
 		locked, err := lock.TryLock()
 		if err != nil {
-			return nil, err
+			return err
 		}
 		if !locked {
-			continue // this port seems to be locked by another packer goroutine
+			return ErrPortFileLocked(port)
 		}
 
 		l, err := lc.ListenConfig.Listen(ctx, lc.Network, fmt.Sprintf("%s:%d", lc.Addr, port))
 		if err != nil {
 			if err := lock.Unlock(); err != nil {
-				log.Printf("Could not unlock file lock for port %d: %v", port, err)
+				log.Fatalf("Could not unlock file lock for port %d: %v", port, err)
 			}
+			return &ErrPortBusy{
+				Port: port,
+				Err:  err,
+			}
+		}
 
-			continue // this port is most likely already open
+		cleanupFunc := func() error {
+			return os.Remove(lockFilePath)
 		}
 
 		log.Printf("Found available port: %d on IP: %s", port, lc.Addr)
-		return &Listener{
-			Address:  lc.Addr,
-			Port:     port,
-			Listener: l,
-			lock:     lock,
-		}, err
+		listener = &Listener{
+			Address:     lc.Addr,
+			Port:        port,
+			Listener:    l,
+			lock:        lock,
+			cleanupFunc: cleanupFunc,
+		}
+		return nil
+	})
+	return listener, err
+}
 
+type ErrPortFileLocked int
+
+func (port ErrPortFileLocked) Error() string {
+	return fmt.Sprintf("Port %d is file locked", port)
+}
+
+type ErrPortBusy struct {
+	Port int
+	Err  error
+}
+
+func (err *ErrPortBusy) Error() string {
+	if err == nil {
+		return "<nil>"
 	}
+	return fmt.Sprintf("port %d cannot be opened: %v", err.Port, err.Err)
 }

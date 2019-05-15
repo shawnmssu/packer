@@ -1,3 +1,57 @@
+## 1.4.1 (May 15, 2019)
+
+### IMPROVEMENTS:
+* **new builder:** new proxmox builder implemented [GH-7490]
+* **new builder:** new yandex cloud builder implemented [GH-7484]
+* **new builder:** new linode builder implemented [GH-7508]
+* build: Circle CI now generates test binaries for all pull requests [GH-7624]
+    [GH-7625] [GH-7630]
+* builder/alicloud: Support encryption with default service key [GH-7574]
+* builder/amazon: Users of chroot and ebssurrogate builders may now choose
+    between "x86_64" and "arm64" architectures when registering their AMIs.
+    [GH-7620]
+* builder/amazon: Users of the ebssurrogage builder may now choose to omit
+    certain launch_block_devices from the final AMI mapping by using the
+    omit_from_artifact feature. [GH-7612]
+* builder/azure: Update Azure SDK [GH-7563]
+* builder/docker: Better error messaging with container downloads. [GH-7513]
+* builder/google: add image encryption support [GH-7551]
+* builder/hyperv: Add keep_registered option to hyperv [GH-7498]
+* builder/qemu: Replace dot-based parsing with hashicorp/go-version [GH-7614]
+* builder/vmware: Add 30 minute timeout for destroying a VM [GH-7553]
+* core: Cleanup cache of used port after closing [GH-7613]
+* core: New option to set number of builds running in parallel & test
+    BuildCommand more [GH-7501]
+* packer compiles on s390x [GH-7567]
+* provisioner/file: Added warnings about writeable locations [GH-7494]
+
+
+### BUG FIXES:
+* builder/amazon: Fix bug that always encrypted build region with default key.
+    [GH-7507]
+* builder/amazon: Fix bug that wasn't deleting unencrypted temporary snapshots
+    [GH-7521]
+* builder/amazon: Fix EBSsurrogate copy, encryption, and deletion of temporary
+    unencrypted amis. [GH-7598]
+* builder/hyperv: Fixes IP detection error if more than one VMNetworkAdapter is
+    found [GH-7480]
+* builder/qemu: Fix mistake switching ssh port mix/max for vnc port min/max
+    [GH-7615]
+* builder/vagrant: Fix bug with builder and vagrant-libvirt plugin [GH-7633]
+* builder/virtualbox: Don't fail download when checksum is not set. [GH-7512]
+* builder/virtualbox: Fix ovf download failures by using local ovf files in
+    place instead of symlinking [GH-7497]
+* builder/vmware: Fix panic configuring VNC for remote builds [GH-7509]
+* core/build: Allow building Packer on solaris by removing progress bar and tty
+    imports on solaris [GH-7618]
+* core: Fix race condition causing hang [GH-7579]
+* core: Fix tty related panics [GH-7517]
+* core: Step download: Always copy local files on windows rather than
+    symlinking them [GH-7575]
+* packer compiles on Solaris again [GH-7589] [GH-7618]
+* post-processor/vagrant: Fix bug in retry logic that caused failed upload to
+    report success. [GH-7554]
+
 ## 1.4.0 (April 11, 2019)
 
 ### IMPROVEMENTS:

@@ -2,8 +2,8 @@
 
 # This script builds the application from source for multiple platforms.
 # Determine the arch/os combos we're building for
-ALL_XC_ARCH=${ALL_XC_ARCH:-"386 amd64 arm arm64 ppc64le"}
-ALL_XC_OS=${ALL_XC_OS:-"linux darwin windows freebsd openbsd solaris"}
+ALL_XC_ARCH="386 amd64 arm arm64 ppc64le mips mips64 mipsle mipsle64 s390x"
+ALL_XC_OS="linux darwin windows freebsd openbsd solaris"
 
 # Exit immediately if a command fails
 set -e
@@ -145,7 +145,7 @@ IFS="${OLDIFS}"
 # Copy our OS/Arch to the bin/ directory
 echo "==> Copying binaries for this platform..."
 DEV_PLATFORM="./pkg/${XC_OS}_${XC_ARCH}"
-for F in $(find ${DEV_PLATFORM} -mindepth 1 -maxdepth 1 -type f 2>/dev/null); do
+for F in $(find ${DEV_PLATFORM} -mindepth 1 -maxdepth 1 -type f); do
     cp -v ${F} bin/
     cp -v ${F} "${MAIN_GOPATH}/bin/"
 done
