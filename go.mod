@@ -50,6 +50,7 @@ require (
 	github.com/golang-collections/collections v0.0.0-20130729185459-604e922904d3
 	github.com/golang/example v0.0.0-20170904185048-46695d81d1fa // indirect
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db // indirect
+	github.com/google/btree v1.0.0 // indirect
 	github.com/google/go-cmp v0.3.0
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/google/shlex v0.0.0-20150127133951-6f45313302b9
@@ -134,7 +135,8 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/temoto/robotstxt v1.1.1 // indirect
 	github.com/tencentcloud/tencentcloud-sdk-go v3.0.94+incompatible
-	github.com/ucloud/ucloud-sdk-go v0.8.7
+	github.com/ucloud/ucloud-sdk-go v0.11.1
+	github.com/ufilesdk-dev/ufile-gosdk v0.0.0-20190730023212-866b183392c4
 	github.com/ugorji/go v0.0.0-20180813092308-00b869d2f4a5
 	github.com/ulikunitz/xz v0.5.5
 	github.com/vmware/govmomi v0.0.0-20170707011325-c2105a174311
